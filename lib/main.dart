@@ -237,7 +237,11 @@ class _GiveawayHomePageState extends State<GiveawayHomePage> {
         child: _buildBody(),
       ),
       // Persistent footer showing prize information
-      bottomNavigationBar: _gameState != GameState.setup ? PrizeTracker(prizePool: _fullPrizePool.sublist(0, _participants)) : null,
+      bottomNavigationBar: _gameState != GameState.setup
+          ? PrizeTracker(
+              prizePool: _fullPrizePool.sublist(0, _participants),
+              prizesClaimed: _prizesClaimed,
+      )   : null,
     );
   }
 
@@ -405,8 +409,9 @@ class MysteryBoxWidget extends StatelessWidget {
 // The footer that tracks available and claimed prizes.
 class PrizeTracker extends StatelessWidget {
   final List<Prize> prizePool;
+  final int prizesClaimed;
 
-  const PrizeTracker({super.key, required this.prizePool});
+  const PrizeTracker({super.key, required this.prizePool, required this.prizesClaimed});
 
   @override
   Widget build(BuildContext context) {
@@ -424,7 +429,50 @@ class PrizeTracker extends StatelessWidget {
 
     // Get a sorted list of unique prize values.
     final prizeValues = prizePool.map((p) => p.value).toSet().toList()..sort((a, b) => b.compareTo(a));
+    int totalAvailableSum = 0;
+    for(var entry in availableCounts.entries){
+      totalAvailableSum += entry.value * entry.key;
+    }
 
+    // List<Widget> children = prizeValues.map((value) {
+    //   final available = availableCounts[value] ?? 0;
+    //   final claimed = claimedCounts[value] ?? 0;
+    //   final total = available + claimed;
+    //   return Column(
+    //     children: [
+    //       Text('\$$value', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+    //       Text('$available / $total', style: TextStyle(color: available > 0 ? Colors.white : Colors.grey)),
+    //     ],
+    //   );
+    // }).toList();
+    // children.insert(2,
+    //     Column(
+    //       children: [
+    //         Text('Average Value', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+    //         Text('\$${(totalAvailableSum / (prizePool.length - prizesClaimed)).toStringAsFixed(2)}', style: TextStyle(color: Colors.white)),
+    //       ],
+    //     )
+    // );
+
+    // That is a fantastic question, and it gets to the heart of probability and game design. For the holiday giveaway game we designed, the answer is: No, there is no advantage to the order in which people play. The expected outcome is independent of your play order. Every player has the exact same statistical chance of receiving any given prize, regardless of whether they go first, last, or somewhere in the middle. Here’s a breakdown of why this is the case.
+    // The Key Concept: A Single, Fair Lottery
+    // The most important design choice we made that ensures fairness is this: All prizes are randomly assigned to the mystery boxes before the first player makes their choice. Think of the entire process not as 30 individual events, but as one single lottery draw where all 30 tickets (the prizes) are placed into 30 envelopes (the mystery boxes) at the same time. The game is just a fun way of revealing the results of that pre-run lottery. Let's illustrate with a simpler example:
+    // Imagine 3 people (A, B, C) and 3 prizes ($100, $20, $5).
+    // The prizes are randomly put into 3 boxes (Box 1, Box 2, Box 3).
+    // Each person has a 1/3 chance of getting the $100 prize. Scenario 1: Player A goes first.
+    // Player A picks a box. Their chance of picking the box with $100 is 1 in 3. Scenario 2: Player B goes second. Let's analyze Player B's chances before the game starts.
+    // For Player B to get the $100, two things must happen:
+    // Player A must not pick the $100 box (a 2/3 probability).
+    // Player B must then pick the $100 box from the remaining two boxes (a 1/2 probability).
+    // To find the total probability, we multiply these chances: (2/3) * (1/2) = 2/6 = 1 in 3. Scenario 3: Player C goes last. For Player C to get the $100, three things must happen:
+    // Player A must not pick the $100 box (2/3 probability).
+    // Player B must not pick the $100 box from the remaining two (1/2 probability).
+    // Player C must then pick the single remaining box, which must be the $100 (1/1 probability).
+    // Multiply the chances: (2/3) * (1/2) * (1/1) = 2/6 = 1 in 3. As you can see, every single player has the exact same 1-in-3 chance of winning the top prize from the outset. This same logic scales up perfectly to your game with 30 players and 30 prizes. The first player has a 1/30 chance of getting a $50 prize, and so does the last player.
+    // The Psychology vs. The Math
+    // The game feels like the odds are changing.
+    // When you go early, it feels like you have more choices, which is exciting.
+    // When you go late, you can see what prizes are left. If a $50 is still on the board, it feels like your odds are better (e.g., "a 1 in 5 chance!"). However, this is a psychological illusion. The only reason the $50 prize is still available is because all the players before you missed it. The probabilities of those misses were already factored into your initial 1/30 chance. The game is a classic example of a fair, zero-sum lottery. The distribution of prizes is fixed, and the game is just the process of revealing that distribution. Your position in the revealing order doesn't change your fundamental odds.
     return Container(
       padding: const EdgeInsets.all(16.0),
       color: Colors.black.withOpacity(0.3),
@@ -446,6 +494,7 @@ class PrizeTracker extends StatelessWidget {
                 ],
               );
             }).toList(),
+            // children: children,
           ),
         ],
       ),
