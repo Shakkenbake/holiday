@@ -37,9 +37,9 @@ class HolidayGiveawayApp extends StatelessWidget {
       title: 'Holiday Office Giveaway',
       theme: ThemeData(
         primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.green.shade900,
+        scaffoldBackgroundColor: Colors.indigo.shade700,
         brightness: Brightness.dark,
-        cardColor: Colors.green.shade800,
+        cardColor: Colors.indigo.shade800,
         textTheme: const TextTheme(
           displayMedium: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           headlineSmall: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -173,10 +173,13 @@ class _GiveawayHomePageState extends State<GiveawayHomePage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Congratulations!'),
+        title: const Text(
+            'Congratulations!',
+            style: TextStyle(color: Colors.indigo),
+        ),
         content: Text(
           'You won \$${box.prize.value}!',
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(color: Colors.black),
+          style: Theme.of(context).textTheme.displayMedium!,
           textAlign: TextAlign.center,
         ),
         actions: [
@@ -363,22 +366,37 @@ class MysteryBoxWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Animate(
-        // This makes the gift shake when tapped.
-        effects: const [ShakeEffect(duration: Duration(milliseconds: 400), hz: 4)],
-        target: box.isOpened ? 0 : 1, // Only animate if not opened
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          elevation: box.isOpened ? 2 : 8,
-          child: GridTile(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: box.isOpened
-                  ? Image.asset('assets/images/gift_open.png', key: const ValueKey('open'))
-                  : Image.asset('assets/images/gift_closed.png', key: const ValueKey('closed')),
+      child:
+      Stack(
+        alignment: Alignment.center,
+        children: [
+          Animate(
+            // This makes the gift shake when tapped.
+            effects: const [ShakeEffect(duration: Duration(milliseconds: 400), hz: 4)],
+            target: box.isOpened ? 0 : 1, // Only animate if not opened
+            child: Container(
+              child: Card(
+              shadowColor: box.isOpened ? Colors.black : Colors.white,
+                clipBehavior: Clip.antiAlias,
+                elevation: box.isOpened ? 2 : 8,
+                child: GridTile(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: box.isOpened
+                        ? Image.asset('assets/images/gift_open.png', key: const ValueKey('open'))
+                        : Image.asset('assets/images/gift_closed.png', key: const ValueKey('closed')),
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+
+          if(box.isOpened)...{
+            Text("\$${box.prize.value}",
+              style: Theme.of(context).textTheme.displayLarge!.copyWith(color: Colors.green,fontSize: 72,fontWeight: FontWeight.bold),
+            ),
+          }
+      ],
       ),
     );
   }
