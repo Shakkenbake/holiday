@@ -70,6 +70,7 @@ class _GiveawayHomePageState extends State<GiveawayHomePage> {
   List<Prize> _fullPrizePool = [];
   int _participants = 0;
   int _prizesClaimed = 0;
+  int? _lastOpenedBoxId;
 
   @override
   void initState() {
@@ -128,6 +129,7 @@ class _GiveawayHomePageState extends State<GiveawayHomePage> {
       _mysteryBoxes = [];
       _participants = 0;
       _prizesClaimed = 0;
+      _lastOpenedBoxId = null;
       // Reset the 'claimed' status on the main prize pool
       for (var prize in _fullPrizePool) {
         prize.isClaimed = false;
@@ -167,6 +169,7 @@ class _GiveawayHomePageState extends State<GiveawayHomePage> {
       box.isOpened = true;
       box.prize.isClaimed = true;
       _prizesClaimed++;
+      _lastOpenedBoxId = box.id;
     });
 
     showDialog(
@@ -268,6 +271,7 @@ class _GiveawayHomePageState extends State<GiveawayHomePage> {
         return GameGrid(
           boxes: _mysteryBoxes,
           onBoxTapped: _onBoxTapped,
+          lastOpenedId: _lastOpenedBoxId,
         );
       case GameState.finished:
         return FinalSummaryScreen(
@@ -334,8 +338,14 @@ class SetupScreen extends StatelessWidget {
 class GameGrid extends StatelessWidget {
   final List<MysteryBox> boxes;
   final Function(MysteryBox) onBoxTapped;
+  final int? lastOpenedId;
 
-  const GameGrid({super.key, required this.boxes, required this.onBoxTapped});
+  const GameGrid({
+    super.key,
+    required this.boxes,
+    required this.onBoxTapped,
+    this.lastOpenedId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -353,6 +363,7 @@ class GameGrid extends StatelessWidget {
         return MysteryBoxWidget(
           box: box,
           onTap: () => onBoxTapped(box),
+          isMostRecent: box.id == lastOpenedId,
         );
       },
     );
@@ -363,8 +374,14 @@ class GameGrid extends StatelessWidget {
 class MysteryBoxWidget extends StatelessWidget {
   final MysteryBox box;
   final VoidCallback onTap;
+  final bool isMostRecent;
 
-  const MysteryBoxWidget({super.key, required this.box, required this.onTap});
+  const MysteryBoxWidget({
+    super.key,
+    required this.box,
+    required this.onTap,
+    required this.isMostRecent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -378,17 +395,27 @@ class MysteryBoxWidget extends StatelessWidget {
             // This makes the gift shake when tapped.
             effects: const [ShakeEffect(duration: Duration(milliseconds: 400), hz: 4)],
             target: box.isOpened ? 0 : 1, // Only animate if not opened
-            child: Container(
-              child: Card(
-              shadowColor: box.isOpened ? Colors.black : Colors.white,
-                clipBehavior: Clip.antiAlias,
-                elevation: box.isOpened ? 2 : 8,
-                child: GridTile(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
-                    child: box.isOpened
-                        ? Image.asset('assets/images/gift_open.png', key: const ValueKey('open'))
-                        : Image.asset('assets/images/gift_closed.png', key: const ValueKey('closed')),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12), // Match Card's default border radius
+                border: isMostRecent
+                    ? Border.all(color: Colors.yellow.shade600, width: 4) // The indicator!
+                    : null,
+              ),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: !box.isOpened ? 1 : .7,
+                child: Card(
+                shadowColor: box.isOpened ? Colors.black : Colors.white,
+                  clipBehavior: Clip.antiAlias,
+                  elevation: box.isOpened ? 2 : 8,
+                  child: GridTile(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: box.isOpened
+                          ? Image.asset('assets/images/gift_open.png', key: const ValueKey('open'))
+                          : Image.asset('assets/images/gift_closed.png', key: const ValueKey('closed')),
+                    ),
                   ),
                 ),
               ),
@@ -397,7 +424,7 @@ class MysteryBoxWidget extends StatelessWidget {
 
           if(box.isOpened)...{
             Text("\$${box.prize.value}",
-              style: Theme.of(context).textTheme.displayLarge!.copyWith(color: Colors.green,fontSize: 72,fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.displayLarge!.copyWith(color: Colors.green.shade800,fontSize: 78,fontWeight: FontWeight.bold),
             ),
           }
       ],
